@@ -4,6 +4,7 @@
   "main": "src/index.js",
   "license": "MIT",
   "dependencies": {
+    "@casl/ability": "^2.4.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
@@ -13,12 +14,23 @@
     "jsonwebtoken": "^8.3.0",
     "lodash": "^4.17.10",
     "mongoose": "^5.2.6",
+    "mongoose-delete": "^0.4.0",
     "morgan": "^1.9.0",
     "nodemailer": "^4.6.7",
-    "rbac": "^5.0.3",
     "xkpasswd": "^1.0.5"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.1",
+    "@types/body-parser": "^1.17.0",
+    "@types/cors": "^2.8.4",
+    "@types/dotenv": "^4.0.3",
+    "@types/express": "^4.16.0",
+    "@types/joi": "^13.4.2",
+    "@types/jsonwebtoken": "^7.2.8",
+    "@types/lodash": "^4.14.116",
+    "@types/mongoose": "^5.2.5",
+    "@types/morgan": "^1.7.35",
+    "@types/nodemailer": "^4.6.2",
     "babel-eslint": "^8.2.6",
     "eslint": "^5.3.0",
     "eslint-config-airbnb-base": "^13.0.0",
@@ -29,12 +41,19 @@
     "eslint-plugin-prettier": "^2.6.2",
     "nodemon": "^1.18.3",
     "prettier": "^1.14.0",
-    "prettier-eslint": "^8.8.2"
+    "prettier-eslint": "^8.8.2",
+    "ts-node": "^7.0.1",
+    "types-installer": "^1.4.0",
+    "typescript": "^3.0.1"
   },
   "scripts": {
     "lint": "eslint src/**/*.{js,mjs}",
     "lint:fix": "yarn lint --fix",
     "lint:report": "yarn lint -f node_modules/eslint-detailed-reporter/lib/detailed.js -o coverage/eslint.html",
-    "format": "prettier --write 'src/**/*.{js,mjs}'"
+    "format": "prettier --write 'src/**/*.{js,mjs}'",
+    "start": "nodemon",
+    "now-start": "node ./dist/index.js",
+    "build": "tsc",
+    "now": "now && now alias"
   }
 }
