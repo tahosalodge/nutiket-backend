@@ -23,8 +23,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set('port', config.port);
 app.get('/', (req, res) => res.send('OK'));
-app.use('/v1/lodge', lodgeRoutes);
-app.use('/v1/user', userRoutes);
+app.use('/api/v1/lodge', lodgeRoutes);
+app.use('/api/v1/user', userRoutes);
 app.use(errors.notFound);
 if (config.env === 'development') {
   app.use(errors.developmentErrors);

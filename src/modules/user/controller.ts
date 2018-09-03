@@ -36,7 +36,7 @@ export const sendUserInfo = (user: UserI) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = pick(req.body, ['email', 'password']);
   if (!email || !password) {
     throw new HttpError('Missing parameters.', 400);
   }
@@ -53,13 +53,12 @@ export const login = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { email, fname, lname, chapter, password, capability } = req.body;
+    const { email, fname, lname, password } = pick(req.body, ['email', 'fname', 'lname', 'password']) as any;
+    
     const toCreate = {
       email,
       fname,
       lname,
-      chapter,
-      capability,
       password: bcrypt.hashSync(password, 8),
     };
     const user = await User.create(toCreate);
@@ -148,10 +147,10 @@ export const update = async (req, res) => {
 
 export const remove = async (req, res) => {
   const { userId } = req.params;
-  const user: any = await User.findById(userId);
+  const user = await User.findById(userId);
   if (!user) {
-    return res.status(404);
+    return res.status(404).send({message: `Could not find user with id "${userId}"`});
   }
-  await user.delete();
-  res.status(204);
+  await user.remove();
+  return res.status(202).send();
 };
