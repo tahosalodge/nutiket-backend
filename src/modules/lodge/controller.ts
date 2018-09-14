@@ -3,7 +3,7 @@ import Lodge, { ILodge } from './model';
 
 export const create = async (req, res) => {
   const { body } = req;
-  const inputs = pick(body, ['council', 'name']);
+  const inputs = pick(body, ['council', 'name', 'chapters']);
   const lodge = new Lodge(inputs);
   await lodge.save();
   res.json({ lodge });
@@ -24,11 +24,7 @@ export const update = async (req, res) => {
   const { lodgeId } = req.params;
   const { body } = req;
   const inputs = pick(body, ['council', 'name', 'chapters']);
-  const lodge = await Lodge.findOneAndUpdate(
-    lodgeId,
-    inputs,
-    { new: true }
-  );
+  const lodge = await Lodge.findOneAndUpdate(lodgeId, inputs, { new: true });
   res.json({ lodge });
 };
 
@@ -36,8 +32,8 @@ export const remove = async (req, res) => {
   const { lodgeId } = req.params;
   const lodge: any = await Lodge.findById(lodgeId);
   if (!lodge) {
-    return res.status(404);
+    return res.status(404).send();
   }
-  await lodge.delete();
-  res.status(204);
+  await lodge.remove();
+  res.status(202).send();
 };
