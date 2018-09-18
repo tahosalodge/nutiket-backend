@@ -2,14 +2,15 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as generatePassword from 'xkpasswd/generate';
 import { pick } from 'lodash';
+import { log } from 'util';
+import { defineAbilitiesFor, ANONYMOUS } from '../user/roles';
 import { HttpError } from '../../utils/errors';
 import User, { UserI } from './model';
 import config from '../../utils/config';
-import { log } from 'util';
 
 export interface Token {
   userId: string;
-  userCap: string;
+  belongsTo: Array<Object>;
 }
 
 /**
@@ -17,20 +18,21 @@ export interface Token {
  */
 
 export const createToken = (user: UserI) => {
-  const { _id: userId, capability: userCap } = user;
-  const tokenVars: Token = { userId, userCap };
+  const { _id: userId, belongsTo } = user;
+  const tokenVars: Token = { userId, belongsTo };
   return jwt.sign(tokenVars, config.jwtSecret, { expiresIn: 86400 });
 };
 
 export const sendUserInfo = (user: UserI) => {
-  const { fname, lname, capability, email } = user;
+  const { fname, lname, belongsTo, email, isAdmin } = user;
   const token = createToken(user);
   const userInfo = {
     token,
     fname,
     lname,
-    capability,
+    belongsTo,
     email,
+    isAdmin,
   };
   return userInfo;
 };
@@ -53,8 +55,13 @@ export const login = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { email, fname, lname, password } = pick(req.body, ['email', 'fname', 'lname', 'password']) as any;
-    
+    const { email, fname, lname, password } = pick(req.body, [
+      'email',
+      'fname',
+      'lname',
+      'password',
+    ]) as any;
+
     const toCreate = {
       email,
       fname,
@@ -86,9 +93,12 @@ export const tokenMiddleware = (req, res, next) => {
     throw new HttpError('No token provided.', 403);
   }
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as Token;
-    req.userId = decoded.userId;
-    req.userCap = decoded.userCap;
+    const { userId, belongsTo } = jwt.verify(token, config.jwtSecret) as Token;
+    req.user = {
+      userId,
+      belongsTo,
+    };
+    req.ability = req.user ? defineAbilitiesFor(req.user) : ANONYMOUS;
     return next();
   } catch (error) {
     throw new HttpError('Failed to authenticate token.', 403);
@@ -149,7 +159,9 @@ export const remove = async (req, res) => {
   const { userId } = req.params;
   const user = await User.findById(userId);
   if (!user) {
-    return res.status(404).send({message: `Could not find user with id "${userId}"`});
+    return res
+      .status(404)
+      .send({ message: `Could not find user with id "${userId}"` });
   }
   await user.remove();
   return res.status(202).send();

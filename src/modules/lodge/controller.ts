@@ -1,11 +1,15 @@
 import { pick } from 'lodash';
-import Lodge, { ILodge } from './model';
+import Lodge from './model';
+import User from '../user/model';
 
 export const create = async (req, res) => {
-  const { body } = req;
+  const { body, userId } = req;
   const inputs = pick(body, ['council', 'name', 'chapters']);
   const lodge = new Lodge(inputs);
   await lodge.save();
+  await User.findOneAndUpdate(userId, {
+    belongsTo: [{ organization: lodge._id, canManage: true }],
+  });
   res.json({ lodge });
 };
 
@@ -30,10 +34,11 @@ export const update = async (req, res) => {
 
 export const remove = async (req, res) => {
   const { lodgeId } = req.params;
-  const lodge: any = await Lodge.findById(lodgeId);
+  const lodge = await Lodge.findById(lodgeId);
   if (!lodge) {
     return res.status(404).send();
   }
+  req.ability.throwUnlessCan('delete', lodge);
   await lodge.remove();
   res.status(202).send();
 };
