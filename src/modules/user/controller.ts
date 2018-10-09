@@ -2,7 +2,6 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as generatePassword from 'xkpasswd/generate';
 import { pick } from 'lodash';
-import { log } from 'util';
 import { defineAbilitiesFor, ANONYMOUS } from '../user/roles';
 import { HttpError } from '../../utils/errors';
 import User, { UserI } from './model';
@@ -11,6 +10,7 @@ import config from '../../utils/config';
 export interface Token {
   userId: string;
   belongsTo: Array<Object>;
+  isAdmin: boolean;
 }
 
 /**
@@ -18,15 +18,16 @@ export interface Token {
  */
 
 export const createToken = (user: UserI) => {
-  const { _id: userId, belongsTo } = user;
-  const tokenVars: Token = { userId, belongsTo };
+  const { _id: userId, belongsTo, isAdmin } = user;
+  const tokenVars: Token = { userId, belongsTo, isAdmin };
   return jwt.sign(tokenVars, config.jwtSecret, { expiresIn: 86400 });
 };
 
 export const sendUserInfo = (user: UserI) => {
-  const { fname, lname, belongsTo, email, isAdmin } = user;
+  const { fname, lname, belongsTo, email, isAdmin, _id } = user;
   const token = createToken(user);
   const userInfo = {
+    _id,
     token,
     fname,
     lname,
@@ -77,7 +78,7 @@ export const register = async (req, res) => {
 };
 
 export const verify = async (req, res) => {
-  const user = await User.findById(req.userId);
+  const user = await User.findById(req.user.userId);
   if (!user) {
     throw new HttpError('No user found.', 404);
   }
@@ -93,10 +94,14 @@ export const tokenMiddleware = (req, res, next) => {
     throw new HttpError('No token provided.', 403);
   }
   try {
-    const { userId, belongsTo } = jwt.verify(token, config.jwtSecret) as Token;
+    const { userId, belongsTo, isAdmin } = jwt.verify(
+      token,
+      config.jwtSecret
+    ) as Token;
     req.user = {
       userId,
       belongsTo,
+      isAdmin,
     };
     req.ability = req.user ? defineAbilitiesFor(req.user) : ANONYMOUS;
     return next();
@@ -137,12 +142,14 @@ export const create = async (req, res) => {
 };
 
 export const get = async (req, res) => {
+  req.ability.throwUnlessCan('read', 'Users');
   const { userId } = req.params;
   const user = await User.findById(userId);
   res.json({ user });
 };
 
 export const list = async (req, res) => {
+  req.ability.throwUnlessCan('read', 'Users');
   const users = await User.find();
   res.json({ users });
 };
@@ -150,8 +157,14 @@ export const list = async (req, res) => {
 export const update = async (req, res) => {
   const { userId } = req.params;
   const { body } = req;
+  const user = await User.findById(userId);
   const updates = pick(body, ['fname', 'lname', 'email']);
-  const user = await User.findOneAndUpdate(userId, updates, { new: true });
+  if (!user) {
+    throw new HttpError('User not found', 404);
+  }
+  req.ability.throwUnlessCan('update', user);
+  user.set({ ...updates });
+  await user.save();
   res.json({ user });
 };
 
@@ -163,6 +176,7 @@ export const remove = async (req, res) => {
       .status(404)
       .send({ message: `Could not find user with id "${userId}"` });
   }
+  req.ability.throwUnlessCan('delete', user);
   await user.remove();
   return res.status(202).send();
 };

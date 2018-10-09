@@ -6,11 +6,14 @@ export const defineAbilitiesFor = user =>
     can('read', 'Lodge');
 
     if (user) {
-      can('manage', 'Lodge', {})
-    }
-
-    if (user.isAdmin) {
-      can('manage', 'Lodge');
+      if (user.isAdmin) {
+        can('manage', 'Lodge');
+        can('manage', 'User');
+      } else {
+        const ids = user.belongsTo.map(related => related._id);
+        can('manage', 'Lodge', { _id: { $in: ids } });
+        can('manage', 'User', { _id: user.userId });
+      }
     }
   });
 

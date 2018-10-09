@@ -1,6 +1,7 @@
 import { pick } from 'lodash';
-import Lodge from './model';
 import User from '../user/model';
+import { HttpError } from '../../utils/errors';
+import Lodge from './model';
 
 export const create = async (req, res) => {
   const { body, userId } = req;
@@ -15,11 +16,13 @@ export const create = async (req, res) => {
 
 export const get = async (req, res) => {
   const { lodgeId } = req.params;
+  req.ability.throwUnlessCan('read', 'Lodge');
   const lodge = await Lodge.findById(lodgeId);
   res.json({ lodge });
 };
 
 export const list = async (req, res) => {
+  req.ability.throwUnlessCan('read', 'Lodge');
   const lodges = await Lodge.find();
   res.json({ lodges });
 };
@@ -27,8 +30,14 @@ export const list = async (req, res) => {
 export const update = async (req, res) => {
   const { lodgeId } = req.params;
   const { body } = req;
-  const inputs = pick(body, ['council', 'name', 'chapters']);
-  const lodge = await Lodge.findOneAndUpdate(lodgeId, inputs, { new: true });
+  const updates = pick(body, ['council', 'name', 'chapters']);
+  const lodge = await Lodge.findById(lodgeId);
+  if (!lodge) {
+    throw new HttpError('Lodge not found', 404);
+  }
+  req.ability.throwUnlessCan('update', lodge);
+  lodge.set({ ...updates });
+  await lodge.save();
   res.json({ lodge });
 };
 
@@ -36,7 +45,7 @@ export const remove = async (req, res) => {
   const { lodgeId } = req.params;
   const lodge = await Lodge.findById(lodgeId);
   if (!lodge) {
-    return res.status(404).send();
+    throw new HttpError('Lodge not found', 404);
   }
   req.ability.throwUnlessCan('delete', lodge);
   await lodge.remove();

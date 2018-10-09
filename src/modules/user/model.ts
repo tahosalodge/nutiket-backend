@@ -16,14 +16,6 @@ export interface UserI extends Document {
   isAdmin: boolean;
 }
 
-const membership = new Schema({
-  organization: {
-    type: Schema.Types.ObjectId,
-    ref: 'Organization',
-  },
-  canManage: Boolean,
-});
-
 const user = new Schema(
   {
     fname: {
@@ -44,7 +36,15 @@ const user = new Schema(
       trim: true,
       required: 'Please supply an email address',
     },
-    belongsTo: [membership],
+    belongsTo: [
+      {
+        organization: {
+          type: Schema.Types.ObjectId,
+          ref: 'Organization',
+        },
+        canManage: Boolean,
+      },
+    ],
     password: { type: String, select: false },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
