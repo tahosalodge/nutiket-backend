@@ -1,5 +1,10 @@
 import { Schema, model, Document } from 'mongoose';
 
+export interface Membership extends Document {
+  organization: string;
+  canManage: boolean;
+}
+
 export interface UserI extends Document {
   _id: string;
   fname: string;
@@ -7,16 +12,9 @@ export interface UserI extends Document {
   phone?: string;
   email: string;
   password: string;
-  capability: string;
+  belongsTo: Array<Membership>;
+  isAdmin: boolean;
 }
-
-const membership = new Schema({
-  organization: {
-    type: Schema.Types.ObjectId,
-    ref: 'Organization',
-  },
-  isOwner: Boolean,
-});
 
 const user = new Schema(
   {
@@ -38,13 +36,19 @@ const user = new Schema(
       trim: true,
       required: 'Please supply an email address',
     },
-    lodge: {
-      type: String,
-    },
-    belongsTo: [membership],
+    belongsTo: [
+      {
+        organization: {
+          type: Schema.Types.ObjectId,
+          ref: 'Organization',
+        },
+        canManage: Boolean,
+      },
+    ],
     password: { type: String, select: false },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    isAdmin: Boolean,
   },
   {
     toObject: {
