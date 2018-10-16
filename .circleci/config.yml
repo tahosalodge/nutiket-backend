@@ -15,6 +15,9 @@ jobs:
           paths:
             - ./node_modules
       - run:
-          name: Run Test and Coverage
+          name: Run Tests and Coverage
           command: |
             yarn test
+      - run:
+          name: Deploy
+          command: ./scripts/deploy.sh
