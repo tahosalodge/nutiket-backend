@@ -10,6 +10,10 @@ if [ $CIRCLE_BRANCH = "develop" ]
     echo ${NOW_STAGING} > ./now.json
 fi
 
-[ -z "$ENVIRONMENT" ] && ENVIRONMENT="development" && exit
+if [ -e now.json ]
+then
+    now --token $ZEIT_TOKEN
+else
+    echo "No environment to deploy, exiting."
+fi
 
-now --token $ZEIT_TOKEN
