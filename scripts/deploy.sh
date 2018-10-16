@@ -12,7 +12,7 @@ fi
 
 if [ -e now.json ]
 then
-    now --token $ZEIT_TOKEN
+    yarn now --token $ZEIT_TOKEN
 else
     echo "No environment to deploy, exiting."
 fi
