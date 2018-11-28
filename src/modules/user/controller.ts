@@ -135,7 +135,6 @@ export const create = async (req, res) => {
   ]);
   const password = generatePassword({ separators: '-' });
   const hashedPassword = bcrypt.hashSync(password, 8);
-  console.log({ data, password });
   const user = await User.create({ ...data, password: hashedPassword });
   // TODO trigger invite email
   res.json(user);
